@@ -113,6 +113,7 @@ public class Recipies {
 				registerEquiv(Material.ENDER_PEARL, 1, Material.SULPHUR, 8) &
 				registerEquiv(Material.BLAZE_ROD, 1, Material.ENDER_PEARL, 2) &
 				
+				registerEquiv(Material.BOOK, 1, Material.PAPER, 3) &
 				
 				registerEquiv(Material.RED_MUSHROOM, 1, Material.BROWN_MUSHROOM, 1);
 	}
