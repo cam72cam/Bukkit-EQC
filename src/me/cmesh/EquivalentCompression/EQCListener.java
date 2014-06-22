@@ -1,5 +1,8 @@
 package me.cmesh.EquivalentCompression;
 
+import me.cmesh.BlockUtil.LavaUtil;
+import me.cmesh.BlockUtil.LiquidUtil;
+import me.cmesh.BlockUtil.WaterUtil;
 import me.cmesh.CraftLib.LoreUtil;
 
 import org.bukkit.Bukkit;
@@ -33,23 +36,8 @@ public class EQCListener implements Listener {
 		}
 	}
 	
-	@SuppressWarnings("deprecation")
-	private boolean isWaterBlock(Block b) {
-		return (b.getType() == Material.WATER || b.getType() == Material.STATIONARY_WATER) && b.getData() == 0;
-	}
-	@SuppressWarnings("deprecation")
-	private boolean isLavaBlock(Block b) {
-		return (b.getType() == Material.LAVA || b.getType() == Material.STATIONARY_LAVA) && b.getData() == 0;
-	}
-	
-	//because java
-	//I really hate java
-	private interface liquitemp {
-		public boolean isLiquid(Block b);
-	}
-	
-	private int suckLiquid(Block block, int max, liquitemp compareor) {
-		if (!compareor.isLiquid(block) || max <= 0) {
+	private int suckLiquid(Block block, Integer max, LiquidUtil manager) {
+		if (!manager.isType(block) || max <= 0) {
 			return 0;
 		}
 		block.setType(Material.AIR);
@@ -58,97 +46,61 @@ public class EQCListener implements Listener {
 		int total = 0;
 		for (BlockFace face : directions) {
 			Block rel = block.getRelative(face);
-			total += suckLiquid(rel, max - 1, compareor);
+			total += suckLiquid(rel, max - 1, manager);
 		}
 		return total + 1;
 	}
 	
-	@SuppressWarnings("deprecation")
-	private void LavaCruicibleAction(PlayerInteractEvent ev) {
+	private void handleLiquidAction(PlayerInteractEvent ev, int cost, boolean clearWeather, LiquidUtil comareor) {
 		ItemStack item = ev.getItem();
 		Player p = ev.getPlayer();
+		
+		String loreKey = "Stored";
 		
 		if (ev.getAction() == Action.RIGHT_CLICK_BLOCK) {
 			Block b = ev.getClickedBlock();
 			b = b.getRelative(ev.getBlockFace());
 			if (!p.isSneaking()) {
-				if (isLavaBlock(b)) {
-					LoreUtil.addLevel(item, "Stored", 1);
+				if (comareor.isSource(b)) {
+					LoreUtil.addLevel(item, loreKey, 1);
 					b.breakNaturally();
-				} else if ((b.getType() == Material.AIR || (b.getType() == Material.LAVA || b.getType() == Material.STATIONARY_LAVA)) && 
-							LoreUtil.getLevel(item, "Stored") > 0) {
+				} else if ((b.getType() == Material.AIR || comareor.isType(b)) && 
+							LoreUtil.getLevel(item, loreKey) > 0) {
 					
-					LoreUtil.addLevel(item, "Stored", -1);
-					b.setType(Material.LAVA);
-					b.setData((byte) 0);
+					LoreUtil.addLevel(item, loreKey, -1);
+					comareor.setSource(b);
 				}
 			} else {
 				//TODO Require redstone
-				if (isLavaBlock(b)) {
-					LoreUtil.addLevel(item, "Stored", suckLiquid(b, 30, new liquitemp() {
-						@Override
-						public boolean isLiquid(Block b) {
-							return isLavaBlock(b);
-						}  }));
+				if (comareor.isSource(b)) {
+					LoreUtil.addLevel(item, loreKey, suckLiquid(b, 30, comareor));
 				}
 			}
 		}
 		if (ev.getAction() == Action.RIGHT_CLICK_AIR) {
-			int level = LoreUtil.getLevel(item, "Stored");
+			int level = LoreUtil.getLevel(item, loreKey);
 			
 			//Looking up
-			if (level > 1000 && p.getLocation().getPitch() <= -88) {
+			if (level > cost && p.getLocation().getPitch() <= -88) {
+				if (clearWeather) {
+					Bukkit.broadcastMessage("Cloulds begin to Clear!");
+					p.getWorld().setWeatherDuration(0);
+					p.getWorld().setStorm(false);
+				} else {
+					Bukkit.broadcastMessage("Cloulds begin to Swirl!");
+					p.getWorld().setStorm(true);
+				}
 				p.getWorld().strikeLightningEffect(p.getLocation());
-				Bukkit.broadcastMessage("Cloulds begin to Clear!");
-				p.getWorld().setWeatherDuration(0);
-				p.getWorld().setStorm(false);
-				LoreUtil.addLevel(item, "Stored", -1000);
+				LoreUtil.addLevel(item, loreKey, -cost);
 			}
 		}
 	}
 	
-	@SuppressWarnings("deprecation")
+	private void LavaCruicibleAction(PlayerInteractEvent ev) {
+		handleLiquidAction(ev, 1000, true, new LavaUtil());
+	}
+	
 	private void WaterCrystalAction(PlayerInteractEvent ev) {
-		ItemStack item = ev.getItem();
-		Player p = ev.getPlayer();
-		
-		if (ev.getAction() == Action.RIGHT_CLICK_BLOCK) {
-			Block b = ev.getClickedBlock();
-			b = b.getRelative(ev.getBlockFace());
-			
-			if (!p.isSneaking()) {
-				if (isWaterBlock(b)) {
-					LoreUtil.addLevel(item, "Stored", 1);
-					b.breakNaturally();
-				} else if ((b.getType() == Material.AIR || (b.getType() == Material.WATER || b.getType() == Material.STATIONARY_WATER)) && 
-							LoreUtil.getLevel(item, "Stored") > 0) {
-					
-					LoreUtil.addLevel(item, "Stored", -1);
-					b.setType(Material.WATER);
-					b.setData((byte) 0);
-				}
-			} else {
-				//TODO Require redstone
-				if (isWaterBlock(b)) {
-					LoreUtil.addLevel(item, "Stored", suckLiquid(b, 30, new liquitemp() {
-						@Override
-						public boolean isLiquid(Block b) {
-							return isWaterBlock(b);
-						}  }));
-				}
-			}
-		}
-		
-		if (ev.getAction() == Action.RIGHT_CLICK_AIR) {
-			int level = LoreUtil.getLevel(item, "Stored");
-			p.sendMessage(p.getLocation().getPitch() + "");
-			//Looking up
-			if (level > 10000 && p.getLocation().getPitch() <= -88) {
-				Bukkit.broadcastMessage("Cloulds begin to Swirl!");
-				p.getWorld().setStorm(true);
-				p.getWorld().strikeLightningEffect(p.getLocation());
-				LoreUtil.addLevel(item, "Stored", -10000);
-			}
-		}
+		handleLiquidAction(ev, 10000, false, new WaterUtil());
 	}
 }
