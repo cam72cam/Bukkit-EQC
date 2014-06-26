@@ -14,5 +14,6 @@ public class EquivalentCompression extends JavaPlugin {
 	public void onEnable() {
 		Recipies.registerAll();
 		getServer().getPluginManager().registerEvents(listener, this);
+		listener.startRunning();
 	}
 }
