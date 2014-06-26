@@ -25,8 +25,11 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
@@ -46,6 +49,8 @@ public class EQCListener implements Listener, Runnable {
 			WaterCrystalAction(ev);
 		} else if (StockItems.BlackHole().equals(item)) {
 			BlackHoleAction(ev);
+		} else if (StockItems.FlightTalisman().equals(item)) {
+			FlightTalismanAction(ev);
 		}
 		
 		//Dupe bug
@@ -254,6 +259,74 @@ public class EQCListener implements Listener, Runnable {
 			
 			for (Entity e : already) {
 				e.setVelocity(p.getLocation().add(new Vector(0,1,0)).subtract(e.getLocation()).toVector().multiply(0.1));
+			}
+		}
+	}
+	
+	private List<UUID> wasAllowedFlying = new ArrayList<UUID>();
+	private List<UUID> isFlying = new ArrayList<UUID>(); 
+
+	//TODO make sure player has item when flying
+	private void FlightTalismanAction(PlayerInteractEvent ev) {
+		Player p = ev.getPlayer();
+		if (ev.getAction() == Action.RIGHT_CLICK_AIR) {
+			p.setVelocity(p.getLocation().getDirection().multiply(3));
+			p.setFallDistance(0);
+			p.setAllowFlight(false);
+			p.sendMessage(p.getAllowFlight() + "");
+		}
+		
+		UUID key = p.getUniqueId();
+		//p.setAllowFlight(false);
+		if (ev.getAction() == Action.LEFT_CLICK_AIR) {
+			if (isFlying.contains(key)) {
+				//stop flight and restore state
+				p.setFlying(false);
+				
+				p.setAllowFlight(wasAllowedFlying.contains(key));
+				if (wasAllowedFlying.contains(key)) {
+					wasAllowedFlying.remove(key);
+				}
+				
+				isFlying.remove(key);
+			} else {
+				if (p.getAllowFlight()) {
+					wasAllowedFlying.add(p.getUniqueId());
+				}
+				
+				p.setAllowFlight(true);
+				p.teleport(p.getLocation().add(new Vector(0,0.1,0)));
+				p.setFlying(true);
+				isFlying.add(p.getUniqueId());
+			}
+		}
+	}
+	
+	@EventHandler()
+	public void flightToggle(PlayerToggleFlightEvent ev) {
+		Player p = ev.getPlayer();
+		p.sendMessage("here!");
+		UUID key = p.getUniqueId();
+		//copy pasta!
+		if (isFlying.contains(key)) {
+			//stop flight and restore state
+			p.setFlying(false);
+			
+			p.setAllowFlight(wasAllowedFlying.contains(key));
+			if (wasAllowedFlying.contains(key)) {
+				wasAllowedFlying.remove(key);
+			}
+			
+			isFlying.remove(key);
+		}
+	}
+	
+	@EventHandler
+	public void onFallDamage(EntityDamageEvent ev) {
+		if (ev.getEntity().getType() == EntityType.PLAYER && ev.getCause() == DamageCause.FALL) {
+			Player p = (Player)ev.getEntity();
+			if (p.getInventory().contains(StockItems.FlightTalisman())) {
+				ev.setCancelled(true);
 			}
 		}
 	}

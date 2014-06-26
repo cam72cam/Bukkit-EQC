@@ -67,4 +67,13 @@ public class StockItems {
 		setDisplayName(item, "Black Hole Rune", diskColor);
 		return item;
 	}
+
+	public static ItemStack FlightTalisman() {
+		SpecialItemStack item = new SpecialItemStack(Material.FEATHER);
+		addLore(item, ChatColor.WHITE + "A leaf on the wind");
+		setDisplayName(item, "Talisman of Flight", diskColor);
+		item.addUnsafeEnchantment(Enchantment.PROTECTION_FALL, 1);
+		
+		return item;
+	}
 }

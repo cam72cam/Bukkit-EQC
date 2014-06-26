@@ -98,7 +98,8 @@ public class Recipies {
 				registerBaseDisk() &
 				registerWaterCrystal() &
 				registerLavaCruicible() &
-				registerBlackHole();
+				registerBlackHole() &
+				registerFlightTalisman();
 	}
 	
 	public static boolean registerTransmogrifications() {
@@ -128,5 +129,18 @@ public class Recipies {
 	
 	public static boolean registerBlackHole() {
 		return Bukkit.getServer().addRecipe(stdDiskRecipe(StockItems.BlackHole(), Material.ENDER_PEARL));
+	}
+	
+	public static boolean registerFlightTalisman() {
+		AdvancedShapedRecipe r = shapedRecipeUsingBase(StockItems.FlightTalisman());
+		CraftUtil.SetupShapedRecipe3x3(r, 
+				Material.GHAST_TEAR, Material.FEATHER, Material.GHAST_TEAR,
+				Material.FEATHER, StockItems.BaseItem().getType(), Material.FEATHER,
+				Material.GHAST_TEAR, Material.FEATHER, Material.GHAST_TEAR);
+		
+		r.requireNone(Material.GHAST_TEAR);
+		r.requireNone(Material.FEATHER);
+		r.requireLore(StockItems.BaseDisk().getType(), StockItems.BaseDisk().getItemMeta().getLore());
+		return Bukkit.getServer().addRecipe(r);
 	}
 }
