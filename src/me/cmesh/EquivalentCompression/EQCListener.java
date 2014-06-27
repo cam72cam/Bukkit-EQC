@@ -237,6 +237,12 @@ public class EQCListener implements Listener, Runnable {
 			
 			Location dest = playerSight(player);
 			Location src = playerholding.getLocation();
+			
+			if (dest.getWorld().getUID() != src.getWorld().getUID()) {
+				entry.getValue().teleport(dest);
+				continue;
+			}
+			
 			Vector diff = dest.subtract(src).toVector();
 			
 			playerholding.setVelocity(diff);
@@ -272,8 +278,8 @@ public class EQCListener implements Listener, Runnable {
 		if (ev.getAction() == Action.RIGHT_CLICK_AIR) {
 			p.setVelocity(p.getLocation().getDirection().multiply(3));
 			p.setFallDistance(0);
-			p.setAllowFlight(false);
-			p.sendMessage(p.getAllowFlight() + "");
+			//p.setAllowFlight(false);
+			//p.sendMessage(p.getAllowFlight() + "");
 		}
 		
 		UUID key = p.getUniqueId();
@@ -305,7 +311,6 @@ public class EQCListener implements Listener, Runnable {
 	@EventHandler()
 	public void flightToggle(PlayerToggleFlightEvent ev) {
 		Player p = ev.getPlayer();
-		p.sendMessage("here!");
 		UUID key = p.getUniqueId();
 		//copy pasta!
 		if (isFlying.contains(key)) {
