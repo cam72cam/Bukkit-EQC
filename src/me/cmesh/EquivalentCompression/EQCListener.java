@@ -215,7 +215,7 @@ public class EQCListener implements Listener, Runnable {
 	public void BlackHoleEntityInteract(PlayerInteractEntityEvent ev) {
 		ItemStack item = ev.getPlayer().getItemInHand();
 		
-		if (StockItems.BlackHole().equals(item)) {
+		if (StockItems.BlackHole().equals(item) && ev.getRightClicked().getType() != EntityType.PLAYER) {
 			ev.setCancelled(true);
 			
 			Entity e = ev.getRightClicked();
