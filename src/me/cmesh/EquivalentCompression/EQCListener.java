@@ -165,6 +165,14 @@ public class EQCListener implements Listener, Runnable {
 		//Start move block
 		if (ev.getAction() == Action.RIGHT_CLICK_BLOCK && p.isSneaking()) {
 			Block b = ev.getClickedBlock();
+			switch(b.getType()) {
+			case PORTAL:
+			case ENDER_PORTAL:
+			case ENDER_PORTAL_FRAME:
+			case OBSIDIAN:
+				return;
+			default:
+			}
 			
 			BlockBreakEvent ourbreak = new BlockBreakEvent(b, p);
 			Bukkit.getServer().getPluginManager().callEvent(ourbreak);
